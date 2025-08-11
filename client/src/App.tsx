@@ -15,8 +15,8 @@ import VenueDetailsPage from './pages/user/VenueDetailsPage';
 import AboutUsPage from './pages/AboutUsPage';
 
 // Placeholder components for other pages
-const BookingPage = () => <div className="p-8"><h1 className="text-2xl font-bold">Booking Page</h1><p>Court booking functionality coming soon...</p></div>;
-const MyBookingsPage = () => <div className="p-8"><h1 className="text-2xl font-bold">My Bookings</h1><p>View your bookings here...</p></div>;
+import BookingPage from './pages/user/BookingPage';
+import MyBookingsPage from './pages/user/MyBookingsPage';
 
 // Import profile pages
 import ProfilePage from './pages/user/ProfilePage';
@@ -132,8 +132,9 @@ function App() {
               </ProtectedRoute>
             } />
 
-            {/* Default redirect */}
+            {/* Default redirects */}
             <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Layout>
       </Router>

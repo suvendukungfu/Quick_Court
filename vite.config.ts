@@ -16,6 +16,8 @@ export default defineConfig({
         ]
       : []),
   ],
+  // Ensure Vite loads environment variables from the repo root where .env resides
+  envDir: path.resolve(import.meta.dirname),
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
