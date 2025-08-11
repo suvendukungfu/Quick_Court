@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import { supabase, auth } from '../lib/supabase';
+import { supabase, users } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -16,14 +16,29 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Helper function to map Supabase user to our User type
-const mapSupabaseUserToUser = (supabaseUser: SupabaseUser): User => {
+const mapSupabaseUserToUser = (supabaseUser: SupabaseUser, userData?: any): User => {
+  // If we have user data from our users table, use that
+  if (userData) {
+    return {
+      id: userData.id,
+      email: userData.email,
+      fullName: userData.full_name,
+      role: userData.role,
+      status: userData.status,
+      avatar: userData.avatar_url,
+      createdAt: new Date(userData.created_at),
+    };
+  }
+  
+  // Fallback to metadata if no user data
   const metadata = supabaseUser.user_metadata || {};
   return {
     id: supabaseUser.id,
     email: supabaseUser.email || '',
     fullName: metadata.fullName || metadata.full_name || supabaseUser.email?.split('@')[0] || 'User',
-    role: metadata.role || 'user',
+    role: metadata.role || 'customer',
     status: 'active',
+    avatar: metadata.avatar_url,
     createdAt: new Date(supabaseUser.created_at || Date.now()),
   };
 };
@@ -37,8 +52,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const getInitialSession = async () => {
       const { data: { user: supabaseUser } } = await supabase.auth.getUser();
       if (supabaseUser) {
-        const userData = mapSupabaseUserToUser(supabaseUser);
-        setUser(userData);
+        // Try to get user data from our users table
+        try {
+          const { data: userData, error } = await users.getByEmail(supabaseUser.email!);
+          if (userData && !error) {
+            const mappedUser = mapSupabaseUserToUser(supabaseUser, userData);
+            setUser(mappedUser);
+          } else {
+            // Fallback to metadata
+            const mappedUser = mapSupabaseUserToUser(supabaseUser);
+            setUser(mappedUser);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          // Fallback to metadata
+          const mappedUser = mapSupabaseUserToUser(supabaseUser);
+          setUser(mappedUser);
+        }
       }
       setLoading(false);
     };
@@ -49,8 +79,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
-          const userData = mapSupabaseUserToUser(session.user);
-          setUser(userData);
+          // Try to get user data from our users table
+          try {
+            const { data: userData, error } = await users.getByEmail(session.user.email!);
+            if (userData && !error) {
+              const mappedUser = mapSupabaseUserToUser(session.user, userData);
+              setUser(mappedUser);
+            } else {
+              // Fallback to metadata
+              const mappedUser = mapSupabaseUserToUser(session.user);
+              setUser(mappedUser);
+            }
+          } catch (error) {
+            console.error('Error fetching user data:', error);
+            // Fallback to metadata
+            const mappedUser = mapSupabaseUserToUser(session.user);
+            setUser(mappedUser);
+          }
         } else {
           setUser(null);
         }
@@ -64,24 +109,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       console.log('Attempting login for:', email);
-      const { data, error } = await auth.signIn(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
       if (error) {
         console.error('Login error:', error.message, error);
-        // Log specific error types for debugging
-        if (error.message.includes('Invalid login credentials')) {
-          console.error('Invalid credentials - user may not exist or password is wrong');
-        } else if (error.message.includes('Email not confirmed')) {
-          console.error('Email not confirmed - check Supabase auth settings');
-        }
         return false;
       }
       
       console.log('Login successful, user data:', data.user);
       if (data.user) {
-        const userData = mapSupabaseUserToUser(data.user);
-        console.log('Mapped user data:', userData);
-        setUser(userData);
+        // Try to get user data from our users table
+        try {
+          const { data: userData, error: userError } = await users.getByEmail(data.user.email!);
+          if (userData && !userError) {
+            const mappedUser = mapSupabaseUserToUser(data.user, userData);
+            setUser(mappedUser);
+          } else {
+            // Fallback to metadata
+            const mappedUser = mapSupabaseUserToUser(data.user);
+            setUser(mappedUser);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          // Fallback to metadata
+          const mappedUser = mapSupabaseUserToUser(data.user);
+          setUser(mappedUser);
+        }
         return true;
       }
       
@@ -95,30 +151,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (userData: Partial<User> & { password: string }): Promise<boolean> => {
     try {
       console.log('Attempting registration for:', userData.email);
-      const { data, error } = await auth.signUp(userData.email!, userData.password, {
-        fullName: userData.fullName,
-        role: userData.role || 'user'
+      
+      // First, create the user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: userData.email!,
+        password: userData.password,
+        options: {
+          data: {
+            fullName: userData.fullName,
+            role: userData.role || 'customer'
+          }
+        }
       });
       
-      if (error) {
-        console.error('Registration error:', error.message, error);
+      if (authError) {
+        console.error('Auth registration error:', authError.message, authError);
         return false;
       }
       
-      console.log('Registration response:', data);
+      console.log('Auth registration response:', authData);
       
-      if (data.user) {
-        console.log('User registered successfully:', data.user);
-        // Check if email confirmation is required
-        if (data.session) {
-          console.log('User session created, setting user data');
-          const mappedUser = mapSupabaseUserToUser(data.user);
+      if (authData.user) {
+        // Create user record in our users table
+        try {
+          const { data: userRecord, error: userError } = await users.create({
+            id: authData.user.id,
+            email: userData.email!,
+            full_name: userData.fullName!,
+            role: userData.role || 'customer',
+            status: 'active'
+          });
+          
+          if (userError) {
+            console.error('User record creation error:', userError);
+            // Auth user was created but user record failed - this is a problem
+            return false;
+          }
+          
+          console.log('User record created successfully:', userRecord);
+          
+          // Set the user in context
+          const mappedUser = mapSupabaseUserToUser(authData.user, userRecord[0]);
           setUser(mappedUser);
-        } else {
-          console.log('No session created - email confirmation may be required');
-          // Don't set user if email confirmation is required
+          
+          return true;
+        } catch (error) {
+          console.error('Error creating user record:', error);
+          return false;
         }
-        return true;
       }
       
       return false;
@@ -129,21 +209,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProfile = async (userData: Partial<User>): Promise<boolean> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    if (user) {
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
-      localStorage.setItem('quickcourt_user', JSON.stringify(updatedUser));
-      return true;
+    try {
+      if (!user?.id) return false;
+      
+      const { data, error } = await users.update(user.id, {
+        full_name: userData.fullName,
+        phone: userData.phone,
+        address: userData.address,
+        business_name: userData.businessName,
+        business_address: userData.businessAddress
+      });
+      
+      if (error) {
+        console.error('Profile update error:', error);
+        return false;
+      }
+      
+      if (data) {
+        const updatedUser = { ...user, ...userData };
+        setUser(updatedUser);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Profile update error:', error);
+      return false;
     }
-    return false;
   };
 
   const logout = async () => {
     try {
-      await auth.signOut();
+      await supabase.auth.signOut();
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);

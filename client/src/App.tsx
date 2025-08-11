@@ -29,8 +29,11 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminFacilities from './pages/admin/AdminFacilities';
 import AdminReports from './pages/admin/AdminReports';
 
+// Owner Pages
+import OwnerDashboard from './pages/owner/OwnerDashboard';
+import PostPropertyPage from './pages/owner/PostPropertyPage';
+
 // Owner placeholder components (to be implemented later)
-const OwnerDashboard = () => <div className="p-8"><h1 className="text-2xl font-bold">Owner Dashboard</h1><p>Analytics and KPIs coming soon...</p></div>;
 const OwnerFacilities = () => <div className="p-8"><h1 className="text-2xl font-bold">Facility Management</h1><p>Manage your facilities here...</p></div>;
 const OwnerTimeSlots = () => <div className="p-8"><h1 className="text-2xl font-bold">Time Slot Management</h1><p>Manage time slots here...</p></div>;
 const OwnerBookings = () => <div className="p-8"><h1 className="text-2xl font-bold">Booking Overview</h1><p>View facility bookings here...</p></div>;
@@ -82,6 +85,11 @@ function App() {
             <Route path="/owner/dashboard" element={
               <ProtectedRoute requiredRole="facility_owner">
                 <OwnerDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/owner/post-property" element={
+              <ProtectedRoute requiredRole="facility_owner">
+                <PostPropertyPage />
               </ProtectedRoute>
             } />
             <Route path="/owner/facilities" element={
