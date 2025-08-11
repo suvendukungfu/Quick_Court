@@ -9,7 +9,9 @@ import {
   LogOut, 
   Menu, 
   X,
-  Trophy
+  Trophy,
+  Brain,
+  Info
 } from 'lucide-react';
 
 interface UserLayoutProps {
@@ -25,6 +27,8 @@ export default function UserLayout({ children }: UserLayoutProps) {
     { name: 'Home', href: '/home', icon: Home },
     { name: 'Venues', href: '/venues', icon: MapPin },
     { name: 'My Bookings', href: '/bookings', icon: Calendar },
+    { name: 'AI Coach', href: '/ai-coach', icon: Brain },
+    { name: 'About Us', href: '/about', icon: Info },
     { name: 'Profile', href: '/profile', icon: User },
   ];
 

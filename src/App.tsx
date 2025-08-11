@@ -12,23 +12,26 @@ import RegisterPage from './pages/auth/RegisterPage';
 import HomePage from './pages/user/HomePage';
 import VenuesPage from './pages/user/VenuesPage';
 import VenueDetailsPage from './pages/user/VenueDetailsPage';
+import AboutUsPage from './pages/AboutUsPage';
 
 // Placeholder components for other pages
 const BookingPage = () => <div className="p-8"><h1 className="text-2xl font-bold">Booking Page</h1><p>Court booking functionality coming soon...</p></div>;
 const MyBookingsPage = () => <div className="p-8"><h1 className="text-2xl font-bold">My Bookings</h1><p>View your bookings here...</p></div>;
-const ProfilePage = () => <div className="p-8"><h1 className="text-2xl font-bold">Profile</h1><p>Manage your profile here...</p></div>;
+
+// Import new profile pages
+import ProfilePage from './pages/user/ProfilePage';
+import OwnerProfilePage from './pages/owner/OwnerProfilePage';
+import AdminProfilePage from './pages/admin/AdminProfilePage';
 
 const OwnerDashboard = () => <div className="p-8"><h1 className="text-2xl font-bold">Owner Dashboard</h1><p>Analytics and KPIs coming soon...</p></div>;
 const OwnerFacilities = () => <div className="p-8"><h1 className="text-2xl font-bold">Facility Management</h1><p>Manage your facilities here...</p></div>;
 const OwnerTimeSlots = () => <div className="p-8"><h1 className="text-2xl font-bold">Time Slot Management</h1><p>Manage time slots here...</p></div>;
 const OwnerBookings = () => <div className="p-8"><h1 className="text-2xl font-bold">Booking Overview</h1><p>View facility bookings here...</p></div>;
-const OwnerProfile = () => <div className="p-8"><h1 className="text-2xl font-bold">Owner Profile</h1><p>Manage your profile here...</p></div>;
 
 const AdminDashboard = () => <div className="p-8"><h1 className="text-2xl font-bold">Admin Dashboard</h1><p>Global statistics coming soon...</p></div>;
 const AdminUsers = () => <div className="p-8"><h1 className="text-2xl font-bold">User Management</h1><p>Manage users here...</p></div>;
 const AdminFacilities = () => <div className="p-8"><h1 className="text-2xl font-bold">Facility Approval</h1><p>Approve facilities here...</p></div>;
 const AdminReports = () => <div className="p-8"><h1 className="text-2xl font-bold">Reports & Moderation</h1><p>View reports here...</p></div>;
-const AdminProfile = () => <div className="p-8"><h1 className="text-2xl font-bold">Admin Profile</h1><p>Manage your profile here...</p></div>;
 
 function App() {
   return (
@@ -71,6 +74,7 @@ function App() {
                 <ProfilePage />
               </ProtectedRoute>
             } />
+            <Route path="/about" element={<AboutUsPage />} />
 
             {/* Facility Owner Routes */}
             <Route path="/owner/dashboard" element={
@@ -95,11 +99,11 @@ function App() {
             } />
             <Route path="/owner/profile" element={
               <ProtectedRoute requiredRole="facility_owner">
-                <OwnerProfile />
+                <OwnerProfilePage />
               </ProtectedRoute>
             } />
 
-            {/* Admin Routes */}
+      
             <Route path="/admin/dashboard" element={
               <ProtectedRoute requiredRole="admin">
                 <AdminDashboard />
@@ -122,7 +126,7 @@ function App() {
             } />
             <Route path="/admin/profile" element={
               <ProtectedRoute requiredRole="admin">
-                <AdminProfile />
+                <AdminProfilePage />
               </ProtectedRoute>
             } />
 

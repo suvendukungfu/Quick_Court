@@ -10,7 +10,9 @@ import {
   LogOut, 
   Menu, 
   X,
-  Trophy
+  Trophy,
+  Brain,
+  Info
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -27,6 +29,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'User Management', href: '/admin/users', icon: Users },
     { name: 'Facility Approval', href: '/admin/facilities', icon: CheckSquare },
     { name: 'Reports', href: '/admin/reports', icon: FileText },
+    { name: 'AI Coach', href: '/ai-coach', icon: Brain },
+    { name: 'About Us', href: '/about', icon: Info },
     { name: 'Profile', href: '/admin/profile', icon: User },
   ];
 

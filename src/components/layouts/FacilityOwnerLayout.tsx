@@ -10,7 +10,9 @@ import {
   LogOut, 
   Menu, 
   X,
-  Trophy
+  Trophy,
+  Brain,
+  Info
 } from 'lucide-react';
 
 interface FacilityOwnerLayoutProps {
@@ -27,6 +29,8 @@ export default function FacilityOwnerLayout({ children }: FacilityOwnerLayoutPro
     { name: 'Facilities', href: '/owner/facilities', icon: Building },
     { name: 'Time Slots', href: '/owner/timeslots', icon: Clock },
     { name: 'Bookings', href: '/owner/bookings', icon: Calendar },
+    { name: 'AI Coach', href: '/ai-coach', icon: Brain },
+    { name: 'About Us', href: '/about', icon: Info },
     { name: 'Profile', href: '/owner/profile', icon: User },
   ];
 
