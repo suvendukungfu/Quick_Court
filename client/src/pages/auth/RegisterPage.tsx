@@ -15,7 +15,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [step, setStep] = useState(1); // 1: form, 2: otp, 3: success
+  const [success, setSuccess] = useState(false);
 
   const { register, isAuthenticated, user } = useAuth();
 
@@ -40,107 +40,55 @@ export default function RegisterPage() {
       return;
     }
 
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      // Simulate OTP step
-      setStep(2);
-      
-      // Simulate OTP verification delay
-      setTimeout(() => {
-        register(formData).then(success => {
-          if (success) {
-            setStep(3);
-          } else {
-            setError('Registration failed. Please try again.');
-          }
-          setLoading(false);
-        });
-      }, 2000);
+      const registrationSuccess = await register(formData);
+      if (registrationSuccess) {
+        setSuccess(true);
+      } else {
+        setError('Registration failed. Please check your email and try again.');
+      }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError('Registration failed. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleOtpSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // OTP is handled automatically in the simulation
-  };
-
-  if (step === 2) {
+  if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center px-4">
         <div className="max-w-md w-full">
           <div className="text-center">
             <div className="flex justify-center mb-6">
               <div className="p-3 bg-green-600 rounded-2xl">
-                <Trophy className="h-10 w-10 text-white" />
+                <Check className="h-10 w-10 text-white" />
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Verify Your Email</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Registration Successful!</h2>
             <p className="text-gray-600 mb-8">
-              We've sent a verification code to {formData.email}
+              Your account has been created successfully. You can now sign in with your credentials.
             </p>
             
             <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-              {loading ? (
-                <div className="text-center py-8">
-                  <Loader className="h-8 w-8 animate-spin mx-auto text-green-600 mb-4" />
-                  <p className="text-gray-600">Verifying your account...</p>
-                </div>
-              ) : (
-                <form onSubmit={handleOtpSubmit}>
-                  <div className="flex justify-center space-x-2 mb-6">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <input
-                        key={i}
-                        type="text"
-                        maxLength={1}
-                        className="w-12 h-12 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg font-semibold"
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value && e.target.nextElementSibling) {
-                            (e.target.nextElementSibling as HTMLInputElement).focus();
-                          }
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
-                  >
-                    Verify Code
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (step === 3) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-            <div className="flex justify-center mb-6">
-              <div className="p-3 bg-green-600 rounded-full">
-                <Check className="h-8 w-8 text-white" />
+              <div className="text-center py-8">
+                <Check className="h-16 w-16 mx-auto text-green-600 mb-4" />
+                <p className="text-lg font-semibold text-gray-900 mb-2">Welcome to QuickCourt!</p>
+                <p className="text-gray-600 mb-6">Your account is ready to use.</p>
+                <Link
+                  to="/login"
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors inline-block"
+                >
+                  Sign In Now
+                </Link>
               </div>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Registration Successful!</h2>
-            <p className="text-gray-600 mb-8">
-              Your account has been created successfully. You can now start booking sports facilities.
-            </p>
-            <div className="p-4 bg-green-50 rounded-lg mb-6">
-              <p className="text-sm text-green-800">
-                🎉 Welcome to QuickCourt! You will be redirected to your dashboard shortly.
-              </p>
             </div>
           </div>
         </div>
@@ -149,17 +97,17 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center">
-            <div className="p-3 bg-blue-600 rounded-2xl">
+            <div className="p-3 bg-purple-600 rounded-2xl">
               <Trophy className="h-10 w-10 text-white" />
             </div>
           </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">Join QuickCourt</h2>
-          <p className="mt-2 text-gray-600">Create your account to get started</p>
+          <p className="mt-2 text-gray-600">Create your account to start booking</p>
         </div>
 
         {/* Registration Form */}
@@ -182,14 +130,14 @@ export default function RegisterPage() {
                 required
                 value={formData.fullName}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                 placeholder="Enter your full name"
               />
             </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email address
+                Email Address
               </label>
               <input
                 id="email"
@@ -199,7 +147,7 @@ export default function RegisterPage() {
                 required
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                 placeholder="Enter your email"
               />
             </div>
@@ -213,10 +161,10 @@ export default function RegisterPage() {
                 name="role"
                 value={formData.role}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
               >
-                <option value="user">Sports Enthusiast (Book facilities)</option>
-                <option value="facility_owner">Facility Owner (List facilities)</option>
+                <option value="user">Sports Player (Book facilities)</option>
+                <option value="facility_owner">Facility Owner (Manage venues)</option>
               </select>
             </div>
 
@@ -229,11 +177,10 @@ export default function RegisterPage() {
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors pr-12"
                   placeholder="Create a password"
                 />
                 <button
@@ -244,6 +191,7 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              <p className="text-xs text-gray-500 mt-1">Password must be at least 6 characters long</p>
             </div>
 
             <div>
@@ -255,11 +203,10 @@ export default function RegisterPage() {
                   id="confirmPassword"
                   name="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
                   required
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors pr-12"
                   placeholder="Confirm your password"
                 />
                 <button
@@ -275,11 +222,14 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={loading || !formData.fullName || !formData.email || !formData.password || !formData.confirmPassword}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            disabled={loading}
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
-              <Loader className="h-5 w-5 animate-spin" />
+              <>
+                <Loader className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                Creating Account...
+              </>
             ) : (
               'Create Account'
             )}
@@ -288,7 +238,7 @@ export default function RegisterPage() {
           <div className="text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link to="/login" className="font-medium text-purple-600 hover:text-purple-500">
                 Sign in
               </Link>
             </p>

@@ -33,25 +33,16 @@ export default function LoginPage() {
     try {
       const success = await login(email, password);
       if (!success) {
-        setError('Invalid email or password');
+        setError('Invalid email or password. Only registered users can access the system.');
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError('Authentication failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
   };
 
-  const demoAccounts = [
-    { label: 'User Account', email: 'user@example.com', role: 'User' },
-    { label: 'Facility Owner', email: 'owner@example.com', role: 'Owner' },
-    { label: 'Admin Account', email: 'admin@example.com', role: 'Admin' },
-  ];
 
-  const fillDemoAccount = (email: string) => {
-    setEmail(email);
-    setPassword('password123');
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center px-4">
@@ -67,22 +58,7 @@ export default function LoginPage() {
           <p className="mt-2 text-gray-600">Sign in to your account</p>
         </div>
 
-        {/* Demo Accounts */}
-        <div className="bg-blue-50 rounded-lg p-4">
-          <p className="text-sm font-medium text-blue-900 mb-3">Quick Demo Access:</p>
-          <div className="grid gap-2">
-            {demoAccounts.map((account) => (
-              <button
-                key={account.email}
-                onClick={() => fillDemoAccount(account.email)}
-                className="text-left p-2 bg-white rounded-lg border border-blue-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-sm"
-              >
-                <div className="font-medium text-blue-900">{account.label}</div>
-                <div className="text-blue-600">{account.email}</div>
-              </button>
-            ))}
-          </div>
-        </div>
+
 
         {/* Login Form */}
         <form className="mt-8 space-y-6 bg-white p-8 rounded-2xl shadow-lg border border-gray-100" onSubmit={handleSubmit}>

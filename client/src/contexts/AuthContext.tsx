@@ -66,7 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await auth.signIn(email, password);
       
       if (error) {
-        console.error('Login error:', error);
+        console.error('Login error:', error.message);
+        // Only allow authenticated users from Supabase database
         return false;
       }
       
