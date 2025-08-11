@@ -58,12 +58,16 @@ app.use((req, res, next) => {
 
   // In development pick a random available port (0). In production prefer PORT env or fallback 5000.
   const port = app.get("env") === "development" ? 0 : (Number(process.env.PORT) || 5000);
+  
+  // Bind to 0.0.0.0 for production (external access) and 127.0.0.1 for development (localhost only)
+  const host = app.get("env") === "development" ? "127.0.0.1" : "0.0.0.0";
+  
   server.listen({
     port,
-    host: "127.0.0.1",
+    host,
   }, () => {
     const addressInfo = server.address();
     const actualPort = typeof addressInfo === 'object' && addressInfo ? addressInfo.port : port;
-    log(`serving on port ${actualPort}`);
+    log(`serving on port ${actualPort} on ${host}`);
   });
 })();
