@@ -28,7 +28,7 @@ export default function RegisterPage() {
     return <Navigate to={dashboardPaths[user.role]} replace />;
   }
 
-  const handleInputChange = (e: React.TargetEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
