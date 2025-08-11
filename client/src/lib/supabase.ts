@@ -7,7 +7,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+})
 
 // Auth helper functions
 export const auth = {
@@ -16,7 +22,8 @@ export const auth = {
       email,
       password,
       options: {
-        data: userData
+        data: userData,
+        emailRedirectTo: undefined // Disable email verification for development
       }
     })
     return { data, error }

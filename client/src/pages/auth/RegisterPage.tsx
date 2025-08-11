@@ -53,9 +53,10 @@ export default function RegisterPage() {
       if (registrationSuccess) {
         setSuccess(true);
       } else {
-        setError('Registration failed. Please check your email and try again.');
+        setError('Registration failed. The email may already be in use or there was a server error.');
       }
     } catch (err) {
+      console.error('Registration error:', err);
       setError('Registration failed. Please try again.');
     } finally {
       setLoading(false);

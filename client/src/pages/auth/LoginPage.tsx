@@ -31,11 +31,13 @@ export default function LoginPage() {
     setError('');
 
     try {
+      console.log('Login attempt with:', email);
       const success = await login(email, password);
       if (!success) {
-        setError('Invalid email or password. Only registered users can access the system.');
+        setError('Invalid email or password. Make sure you have registered and verified your email.');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Authentication failed. Please check your credentials.');
     } finally {
       setLoading(false);

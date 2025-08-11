@@ -63,16 +63,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      console.log('Attempting login for:', email);
       const { data, error } = await auth.signIn(email, password);
       
       if (error) {
-        console.error('Login error:', error.message);
-        // Only allow authenticated users from Supabase database
+        console.error('Login error:', error.message, error);
+        // Log specific error types for debugging
+        if (error.message.includes('Invalid login credentials')) {
+          console.error('Invalid credentials - user may not exist or password is wrong');
+        } else if (error.message.includes('Email not confirmed')) {
+          console.error('Email not confirmed - check Supabase auth settings');
+        }
         return false;
       }
       
+      console.log('Login successful, user data:', data.user);
       if (data.user) {
         const userData = mapSupabaseUserToUser(data.user);
+        console.log('Mapped user data:', userData);
         setUser(userData);
         return true;
       }
@@ -86,19 +94,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (userData: Partial<User> & { password: string }): Promise<boolean> => {
     try {
+      console.log('Attempting registration for:', userData.email);
       const { data, error } = await auth.signUp(userData.email!, userData.password, {
         fullName: userData.fullName,
         role: userData.role || 'user'
       });
       
       if (error) {
-        console.error('Registration error:', error);
+        console.error('Registration error:', error.message, error);
         return false;
       }
       
+      console.log('Registration response:', data);
+      
       if (data.user) {
-        const mappedUser = mapSupabaseUserToUser(data.user);
-        setUser(mappedUser);
+        console.log('User registered successfully:', data.user);
+        // Check if email confirmation is required
+        if (data.session) {
+          console.log('User session created, setting user data');
+          const mappedUser = mapSupabaseUserToUser(data.user);
+          setUser(mappedUser);
+        } else {
+          console.log('No session created - email confirmation may be required');
+          // Don't set user if email confirmation is required
+        }
         return true;
       }
       
