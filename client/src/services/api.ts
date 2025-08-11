@@ -1,5 +1,25 @@
 const API_BASE_URL = '/api';
 
+interface BookingPayload {
+  userId: string;
+  facilityId: string;
+  courtId: string;
+  date: string;
+  timeSlot: {
+    start: string;
+    end: string;
+  };
+  totalPrice: number;
+}
+
+interface ProfileData {
+  fullName?: string;
+  phone?: string;
+  address?: string;
+  businessName?: string;
+  businessAddress?: string;
+}
+
 class ApiService {
   async listFacilities() {
     const res = await fetch(`${API_BASE_URL}/facilities`);
@@ -7,19 +27,19 @@ class ApiService {
     return res.json();
   }
 
-  async getFacility(facilityId) {
+  async getFacility(facilityId: string) {
     const res = await fetch(`${API_BASE_URL}/facilities/${facilityId}`);
     if (!res.ok) throw new Error('Failed to fetch facility');
     return res.json();
   }
 
-  async getFacilityCourts(facilityId) {
+  async getFacilityCourts(facilityId: string) {
     const res = await fetch(`${API_BASE_URL}/facilities/${facilityId}/courts`);
     if (!res.ok) throw new Error('Failed to fetch courts');
     return res.json();
   }
 
-  async createBooking(payload) {
+  async createBooking(payload: BookingPayload) {
     const res = await fetch(`${API_BASE_URL}/bookings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -32,14 +52,15 @@ class ApiService {
     return res.json();
   }
 
-  async listBookings(userId) {
+  async listBookings(userId?: string) {
     const url = new URL(`${API_BASE_URL}/bookings`, window.location.origin);
     if (userId) url.searchParams.set('userId', userId);
     const res = await fetch(url.toString().replace(window.location.origin, ''));
     if (!res.ok) throw new Error('Failed to fetch bookings');
     return res.json();
   }
-  async getUserProfile(userId) {
+
+  async getUserProfile(userId: string) {
     try {
       const response = await fetch(`${API_BASE_URL}/profile/${userId}`);
       if (!response.ok) throw new Error('Failed to fetch user profile');
@@ -50,7 +71,7 @@ class ApiService {
     }
   }
 
-  async updateUserProfile(userId, profileData) {
+  async updateUserProfile(userId: string, profileData: ProfileData) {
     try {
       const response = await fetch(`${API_BASE_URL}/profile/${userId}`, {
         method: 'PUT',
@@ -67,7 +88,7 @@ class ApiService {
     }
   }
 
-  async patchUserProfile(userId, profileData) {
+  async patchUserProfile(userId: string, profileData: ProfileData) {
     try {
       const response = await fetch(`${API_BASE_URL}/profile/${userId}`, {
         method: 'PATCH',

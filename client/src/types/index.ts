@@ -5,9 +5,14 @@ export interface User {
   avatar?: string;
   role: 'user' | 'facility_owner' | 'admin' | 'customer';
   status: 'active' | 'banned';
+  phone?: string;
+  address?: string;
+  businessName?: string;
+  businessAddress?: string;
   createdAt: Date;
 }
 
+// Legacy interfaces for backward compatibility
 export interface Facility {
   id: string;
   name: string;
@@ -79,3 +84,6 @@ export interface Review {
   comment: string;
   createdAt: Date;
 }
+
+// Export new facility types
+export * from './facility';

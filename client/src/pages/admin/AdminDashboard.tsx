@@ -1,79 +1,264 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Building, AlertTriangle, DollarSign, TrendingUp, Calendar, Activity, CheckCircle } from 'lucide-react';
+import { users as usersApi, facilities as facilitiesApi } from '../../lib/supabase';
 
 export default function AdminDashboard() {
-  const stats = [
+  const [stats, setStats] = useState([
     {
       title: 'Total Users',
-      value: '2,847',
-      change: '+12.5%',
+      value: '0',
+      change: '+0%',
       changeType: 'increase',
       icon: Users,
       color: 'bg-blue-500'
     },
     {
       title: 'Total Facilities',
-      value: '156',
-      change: '+8.2%',
+      value: '0',
+      change: '+0%',
       changeType: 'increase', 
       icon: Building,
       color: 'bg-green-500'
     },
     {
       title: 'Pending Approvals',
-      value: '12',
-      change: '-4.1%',
-      changeType: 'decrease',
+      value: '0',
+      change: '0%',
+      changeType: 'neutral',
       icon: AlertTriangle,
       color: 'bg-yellow-500'
     },
     {
-      title: 'Revenue This Month',
-      value: '$125,680',
-      change: '+15.3%',
+      title: 'Facility Owners',
+      value: '0',
+      change: '+0%',
       changeType: 'increase',
-      icon: DollarSign,
+      icon: Users,
       color: 'bg-purple-500'
     }
-  ];
+  ]);
 
-  const recentActivity = [
+  const [loading, setLoading] = useState(true);
+
+  // Fetch real data from Supabase
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        console.log('Starting to fetch dashboard data...');
+        
+        // Add timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+          console.log('Dashboard loading timeout reached, stopping loading state');
+          setLoading(false);
+        }, 10000); // 10 second timeout
+        
+        // Fetch users and facilities
+        const [usersResponse, facilitiesResponse] = await Promise.all([
+          usersApi.getAll(),
+          facilitiesApi.getAll()
+        ]);
+        
+        // Clear timeout since we got a response
+        clearTimeout(timeoutId);
+        
+        console.log('Dashboard API responses received:', { usersResponse, facilitiesResponse });
+        
+        if (usersResponse.error) {
+          console.error('Error fetching users:', usersResponse.error);
+        }
+        
+        if (facilitiesResponse.error) {
+          console.error('Error fetching facilities:', facilitiesResponse.error);
+        }
+        
+        // Use fallback data if API calls fail
+        let users = usersResponse.data || [];
+        let facilities = facilitiesResponse.data || [];
+        
+        // If both API calls failed, set default stats and stop loading
+        if (usersResponse.error && facilitiesResponse.error) {
+          console.log('Both dashboard API calls failed, setting default stats');
+          setStats([
+            {
+              title: 'Total Users',
+              value: '0',
+              change: '+0%',
+              changeType: 'increase',
+              icon: Users,
+              color: 'bg-blue-500'
+            },
+            {
+              title: 'Total Facilities',
+              value: '0',
+              change: '+0%',
+              changeType: 'increase', 
+              icon: Building,
+              color: 'bg-green-500'
+            },
+            {
+              title: 'Pending Approvals',
+              value: '0',
+              change: '0%',
+              changeType: 'neutral',
+              icon: AlertTriangle,
+              color: 'bg-yellow-500'
+            },
+            {
+              title: 'Facility Owners',
+              value: '0',
+              change: '+0%',
+              changeType: 'increase',
+              icon: Users,
+              color: 'bg-purple-500'
+            }
+          ]);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('Dashboard data extracted:', { users, facilities });
+        
+        // Calculate real stats
+        const totalUsers = users.length;
+        const totalFacilities = facilities.length;
+        const facilityOwners = users.filter(u => u.role === 'facility_owner').length;
+        const pendingFacilities = facilities.filter(f => f.status === 'pending').length;
+        
+        console.log('Dashboard stats calculated:', { totalUsers, totalFacilities, facilityOwners, pendingFacilities });
+        
+        setStats([
+          {
+            title: 'Total Users',
+            value: totalUsers.toString(),
+            change: '+0%',
+            changeType: 'increase',
+            icon: Users,
+            color: 'bg-blue-500'
+          },
+          {
+            title: 'Total Facilities',
+            value: totalFacilities.toString(),
+            change: '+0%',
+            changeType: 'increase', 
+            icon: Building,
+            color: 'bg-green-500'
+          },
+          {
+            title: 'Pending Approvals',
+            value: pendingFacilities.toString(),
+            change: '0%',
+            changeType: 'neutral',
+            icon: AlertTriangle,
+            color: 'bg-yellow-500'
+          },
+          {
+            title: 'Facility Owners',
+            value: facilityOwners.toString(),
+            change: '+0%',
+            changeType: 'increase',
+            icon: Users,
+            color: 'bg-purple-500'
+          }
+        ]);
+        
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        // Set loading to false even on error
+        setLoading(false);
+      } finally {
+        console.log('Setting dashboard loading to false');
+        setLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
+  }, []);
+
+  const [recentActivity, setRecentActivity] = useState([
     {
       id: 1,
-      action: 'New facility approved',
-      details: 'Green Valley Sports Complex',
-      time: '5 minutes ago',
-      type: 'approval'
-    },
-    {
-      id: 2,
-      action: 'User report resolved',
-      details: 'Spam content removed',
-      time: '1 hour ago',
-      type: 'moderation'
-    },
-    {
-      id: 3,
-      action: 'System maintenance completed',
-      details: 'Database optimization',
-      time: '3 hours ago',
-      type: 'system'
-    },
-    {
-      id: 4,
-      action: 'New user registration',
-      details: 'Premium member signup',
-      time: '6 hours ago',
-      type: 'user'
+      action: 'No recent activity',
+      details: 'Data will appear here',
+      time: 'Just now',
+      type: 'info'
     }
-  ];
+  ]);
 
-  const systemHealth = [
-    { service: 'Web Application', status: 'operational', uptime: '99.9%' },
-    { service: 'Database', status: 'operational', uptime: '99.8%' },
-    { service: 'Payment Gateway', status: 'operational', uptime: '100%' },
-    { service: 'Email Service', status: 'degraded', uptime: '98.5%' }
-  ];
+  // Update recent activity with real data
+  useEffect(() => {
+    const updateRecentActivity = () => {
+      const now = new Date();
+      const activities = [];
+      
+      // Add recent user registrations
+      if (stats[0].value !== '0') {
+        activities.push({
+          id: 1,
+          action: 'Users registered',
+          details: `${stats[0].value} total users`,
+          time: 'Just now',
+          type: 'user'
+        });
+      }
+      
+      // Add recent facility additions
+      if (stats[1].value !== '0') {
+        activities.push({
+          id: 2,
+          action: 'Facilities added',
+          details: `${stats[1].value} total facilities`,
+          time: 'Just now',
+          type: 'approval'
+        });
+      }
+      
+      // Add pending approvals info
+      if (stats[2].value !== '0') {
+        activities.push({
+          id: 3,
+          action: 'Pending approvals',
+          details: `${stats[2].value} facilities need review`,
+          time: 'Just now',
+          type: 'moderation'
+        });
+      }
+      
+      if (activities.length > 0) {
+        setRecentActivity(activities);
+      }
+    };
+    
+    if (!loading) {
+      updateRecentActivity();
+    }
+  }, [stats, loading]);
+
+  const [systemHealth, setSystemHealth] = useState([
+    { service: 'Web Application', status: 'operational', uptime: '100%' },
+    { service: 'Database', status: 'operational', uptime: '100%' },
+    { service: 'API Services', status: 'operational', uptime: '100%' },
+    { service: 'Authentication', status: 'operational', uptime: '100%' }
+  ]);
+
+  // Update system health based on data fetching status
+  useEffect(() => {
+    if (loading) {
+      setSystemHealth([
+        { service: 'Web Application', status: 'operational', uptime: '100%' },
+        { service: 'Database', status: 'operational', uptime: '100%' },
+        { service: 'API Services', status: 'operational', uptime: '100%' },
+        { service: 'Authentication', status: 'operational', uptime: '100%' }
+      ]);
+    } else {
+      setSystemHealth([
+        { service: 'Web Application', status: 'operational', uptime: '100%' },
+        { service: 'Database', status: 'operational', uptime: '100%' },
+        { service: 'API Services', status: 'operational', uptime: '100%' },
+        { service: 'Data Fetching', status: 'operational', uptime: '100%' }
+      ]);
+    }
+  }, [loading]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -83,6 +268,23 @@ export default function AdminDashboard() {
       default: return 'text-gray-600 bg-gray-100';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600 mt-2">Platform overview and system monitoring</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading dashboard data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

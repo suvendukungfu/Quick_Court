@@ -41,9 +41,14 @@ export default function BookingPage() {
     setSubmitting(true);
     setError('');
     try {
+      if (!facilityId) {
+        setError('Facility ID is required');
+        return;
+      }
+      
       await api.createBooking({
         userId: user.id,
-        facilityId,
+        facilityId: facilityId,
         courtId: selectedCourt.id,
         date,
         timeSlot: { start, end },

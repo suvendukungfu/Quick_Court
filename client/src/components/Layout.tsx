@@ -9,14 +9,26 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
+  // Show loading state while auth is initializing
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // If no user, just render children without layout (for public routes)
   if (!user) {
     return <>{children}</>;
   }
 
+  // Apply role-based layout for authenticated users
   switch (user.role) {
     case 'user':
+    case 'customer':
       return <UserLayout>{children}</UserLayout>;
     case 'facility_owner':
       return <FacilityOwnerLayout>{children}</FacilityOwnerLayout>;

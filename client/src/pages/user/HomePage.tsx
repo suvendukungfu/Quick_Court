@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, MapPin, Star, Clock, Users, Calendar, Trophy, ArrowRight } from 'lucide-react';
 import { mockFacilities } from '../../data/mockData';
-import { properties } from '../../lib/supabase';
+import { facilities } from '../../lib/supabase';
+import { Facility } from '../../types/facility';
 
 export default function HomePage() {
-  const [postedProperties, setPostedProperties] = useState<any[]>([]);
+  const [postedFacilities, setPostedFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
 
   const popularSports = [
@@ -18,57 +19,36 @@ export default function HomePage() {
 
   const topVenues = mockFacilities.slice(0, 3);
 
-  // Fetch real properties from Supabase
+  // Fetch real facilities from Supabase
   useEffect(() => {
-    const fetchProperties = async () => {
+    const fetchFacilities = async () => {
       try {
         setLoading(true);
-        console.log('Loading posted properties from facility_availability table...');
-        const { data, error } = await properties.getAll();
+        console.log('Loading posted facilities from facilities table...');
+        const { data, error } = await facilities.getAll();
         
-        console.log('Properties response:', { data, error });
+        console.log('Facilities response:', { data, error });
         
         if (error) {
-          console.error('Error fetching properties:', error);
+          console.error('Error fetching facilities:', error);
           return;
         }
 
-        // Transform Supabase data to match our display format
-        console.log('Raw properties data:', data);
+        console.log('Raw facilities data:', data);
         
-        const transformedProperties = (data || []).map(prop => ({
-          id: prop.id,
-          property_name: prop.property_name,
-          description: prop.description || `A ${prop.property_type?.replace('_', ' ')} facility`, // Generate description
-          address: prop.address,
-          property_type: prop.property_type,
-          current_status: prop.current_status,
-          is_sold: prop.is_sold,
-          current_booking_start: prop.current_booking_start,
-          current_booking_end: prop.current_booking_end,
-          next_available_time: prop.next_available_time,
-          total_booked_hours: prop.total_booked_hours || 0,
-          monthly_booked_hours: prop.monthly_booked_hours || 0,
-          sports: [prop.property_type?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Sports'], // Generate from property_type
-          amenities: ['Basic Amenities'], // Default amenities
-          pricePerHour: 25, // Default price since price_per_hour doesn't exist
-          rating: 4.5, // Default rating
-          reviewCount: 0, // Default review count
-          isNew: true,
-          owner: 'Facility Owner' // Default owner name
-        }));
+        // Filter out banned facilities from user view
+        const activeFacilities = (data || []).filter((facility: any) => facility.status !== 'banned');
+        console.log('Active facilities (excluding banned):', activeFacilities);
         
-        console.log('Transformed properties:', transformedProperties);
-
-        setPostedProperties(transformedProperties);
+        setPostedFacilities(activeFacilities);
       } catch (err) {
-        console.error('Error fetching properties:', err);
+        console.error('Error fetching facilities:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProperties();
+    fetchFacilities();
   }, []);
 
   return (
@@ -233,10 +213,10 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* New Properties from Facility Owners */}
+      {/* New Facilities from Facility Owners */}
       <div>
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">New Properties</h2>
+          <h2 className="text-xl font-bold text-gray-900">New Facilities</h2>
           <Link
             to="/venues"
             className="text-blue-600 hover:text-blue-700 font-semibold flex items-center"
@@ -259,69 +239,76 @@ export default function HomePage() {
                 </div>
               </div>
             ))
-          ) : postedProperties.length === 0 ? (
-            // No properties state
+          ) : postedFacilities.length === 0 ? (
+            // No facilities state
             <div className="md:col-span-3 text-center py-12">
               <Trophy className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No properties available yet</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No facilities available yet</h3>
               <p className="text-gray-600">Check back later for new sports facilities!</p>
             </div>
           ) : (
-            // Real properties from Supabase
-            postedProperties.slice(0, 3).map((property) => (
+            // Real facilities from Supabase
+            postedFacilities.slice(0, 3).map((facility) => (
             <div
-              key={property.id}
+              key={facility.id}
               className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
             >
               <div className="relative h-48 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
-                                  <div className="text-center">
-                    <Trophy className="h-16 w-16 text-blue-600 mx-auto mb-2" />
-                    <p className="text-blue-600 font-semibold">{property.property_type}</p>
-                  </div>
-                {property.isNew && (
+                <div className="text-center">
+                  <Trophy className="h-16 w-16 text-blue-600 mx-auto mb-2" />
+                  <p className="text-blue-600 font-semibold">{facility.facility_type?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</p>
+                </div>
+                {facility.is_verified && (
                   <div className="absolute top-4 left-4">
                     <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                      NEW
+                      VERIFIED
+                    </span>
+                  </div>
+                )}
+                {facility.featured && (
+                  <div className="absolute top-4 right-4">
+                    <span className="bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      FEATURED
                     </span>
                   </div>
                 )}
               </div>
               <div className="p-6">
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-xl font-semibold text-gray-900">{property.property_name}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">{facility.name}</h3>
                   <div className="flex items-center">
                     <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                    <span className="text-sm font-semibold ml-1">{property.rating}</span>
+                    <span className="text-sm font-semibold ml-1">4.5</span>
                   </div>
                 </div>
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{property.description}</p>
+                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{facility.description}</p>
                 <div className="flex items-center text-gray-600 mb-3">
                   <MapPin className="h-4 w-4 mr-1" />
-                  <span className="text-sm">{property.address.split(',')[1]}</span>
+                  <span className="text-sm">{facility.city}, {facility.state}</span>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {property.sports.map((sport) => (
-                    <span
-                      key={sport}
-                      className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-lg"
-                    >
-                      {sport}
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-lg">
+                    {facility.facility_type?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                  </span>
+                  {facility.is_verified && (
+                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-lg">
+                      Verified
                     </span>
-                  ))}
+                  )}
                 </div>
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <span className="text-lg font-bold text-gray-900">
-                      ${property.pricePerHour}
+                      $25
                     </span>
                     <span className="text-gray-600 text-sm">/hour</span>
                   </div>
                   <div className="text-xs text-gray-500">
-                    {property.reviewCount} reviews
+                    0 reviews
                   </div>
                 </div>
                 <div className="text-xs text-gray-500 mb-4">
-                  Owner: {property.owner}
+                  Status: {facility.status}
                 </div>
                 
                 {/* Status and Availability */}
@@ -329,43 +316,33 @@ export default function HomePage() {
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium">Status:</span>
                     <span className={`px-2 py-1 rounded-full text-xs ${
-                      property.current_status === 'active' ? 'bg-green-100 text-green-800' :
-                      property.current_status === 'maintenance' ? 'bg-yellow-100 text-yellow-800' :
+                      facility.status === 'active' ? 'bg-green-100 text-green-800' :
+                      facility.status === 'maintenance' ? 'bg-yellow-100 text-yellow-800' :
                       'bg-red-100 text-red-800'
                     }`}>
-                      {property.current_status === 'active' ? 'Available' : 
-                       property.current_status === 'maintenance' ? 'Under Maintenance' : 'Inactive'}
+                      {facility.status === 'active' ? 'Available' : 
+                       facility.status === 'maintenance' ? 'Under Maintenance' : 'Inactive'}
                     </span>
                   </div>
-                  {property.is_sold && (
-                    <div className="text-red-600 font-medium">⚠️ Property Sold</div>
-                  )}
-                  {property.current_booking_end && (
-                    <div className="text-gray-600">
-                      Booked until: {new Date(property.current_booking_end).toLocaleDateString()}
-                    </div>
-                  )}
-                  {property.next_available_time && (
-                    <div className="text-green-600">
-                      Available from: {new Date(property.next_available_time).toLocaleDateString()}
-                    </div>
-                  )}
+                  <div className="text-gray-600">
+                    Created: {new Date(facility.created_at).toLocaleDateString()}
+                  </div>
                 </div>
 
                 <Link
-                  to={`/venues/${property.id}`}
+                  to={`/venues/${facility.id}`}
                   className={`w-full py-2 px-4 rounded-lg text-center transition-colors block ${
-                    property.current_status === 'active' && !property.is_sold
+                    facility.status === 'active'
                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                       : 'bg-gray-400 text-gray-200 cursor-not-allowed'
                   }`}
                   onClick={(e) => {
-                    if (property.current_status !== 'active' || property.is_sold) {
+                    if (facility.status !== 'active') {
                       e.preventDefault();
                     }
                   }}
                 >
-                  {property.current_status === 'active' && !property.is_sold ? 'Book Now' : 'Not Available'}
+                  {facility.status === 'active' ? 'Book Now' : 'Not Available'}
                 </Link>
               </div>
             </div>

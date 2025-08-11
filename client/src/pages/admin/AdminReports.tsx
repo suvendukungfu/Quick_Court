@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, Flag, Eye, MessageSquare, User, Clock, CheckCircle, X, AlertTriangle } from 'lucide-react';
+import { users as usersApi, facilities as facilitiesApi } from '../../lib/supabase';
+import { User as UserType } from '../../types';
+import { Facility } from '../../types/facility';
 
 interface Report {
   id: string;
@@ -17,72 +20,141 @@ interface Report {
   resolvedBy?: string;
 }
 
+// For now, we'll create sample reports based on real data
+interface SampleReport extends Report {
+  isSample: boolean;
+}
+
 export default function AdminReports() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
-  const mockReports: Report[] = [
-    {
-      id: '1',
-      type: 'user',
-      title: 'Inappropriate behavior during game',
-      description: 'User was using offensive language and being aggressive towards other players during the badminton session.',
-      reporterName: 'Alice Smith',
-      reporterEmail: 'alice.smith@email.com',
-      targetName: 'John Doe',
-      targetType: 'user',
-      status: 'pending',
-      priority: 'high',
-      submitDate: '2024-01-15T10:30:00Z'
-    },
-    {
-      id: '2',
-      type: 'facility',
-      title: 'Poor facility maintenance',
-      description: 'The tennis court has several cracks and the net is torn. Safety concerns for players.',
-      reporterName: 'Mike Johnson',
-      reporterEmail: 'mike.j@email.com',
-      targetName: 'City Tennis Club',
-      targetType: 'facility',
-      status: 'resolved',
-      priority: 'medium',
-      submitDate: '2024-01-12T14:15:00Z',
-      resolvedDate: '2024-01-14T09:00:00Z',
-      resolvedBy: 'Admin Team'
-    },
-    {
-      id: '3',
-      type: 'payment',
-      title: 'Unauthorized charge',
-      description: 'I was charged for a booking that I cancelled within the cancellation period.',
-      reporterName: 'Sarah Wilson',
-      reporterEmail: 'sarah.w@email.com',
-      targetName: 'Booking #12345',
-      targetType: 'booking',
-      status: 'pending',
-      priority: 'urgent',
-      submitDate: '2024-01-16T16:45:00Z'
-    },
-    {
-      id: '4',
-      type: 'content',
-      title: 'Spam in facility description',
-      description: 'Facility owner is posting inappropriate links and promotional content in the facility description.',
-      reporterName: 'Tom Brown',
-      reporterEmail: 'tom.brown@email.com',
-      targetName: 'Downtown Sports Center',
-      targetType: 'facility',
-      status: 'dismissed',
-      priority: 'low',
-      submitDate: '2024-01-10T11:20:00Z',
-      resolvedDate: '2024-01-11T13:30:00Z',
-      resolvedBy: 'Content Moderator'
-    }
-  ];
+  const [reports, setReports] = useState<SampleReport[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredReports = mockReports.filter(report => {
+  // Fetch real data and create sample reports
+  useEffect(() => {
+    const fetchDataAndCreateReports = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch users and facilities
+        const [usersResponse, facilitiesResponse] = await Promise.all([
+          usersApi.getAll(),
+          facilitiesApi.getAll()
+        ]);
+        
+        if (usersResponse.error) {
+          console.error('Error fetching users:', usersResponse.error);
+        }
+        
+        if (facilitiesResponse.error) {
+          console.error('Error fetching facilities:', facilitiesResponse.error);
+        }
+        
+        const usersData = usersResponse.data || [];
+        const facilitiesData = facilitiesResponse.data || [];
+        
+        setUsers(usersData);
+        setFacilities(facilitiesData);
+        
+        // Create sample reports based on real data
+        const sampleReports: SampleReport[] = [];
+        
+        // Create user behavior reports
+        if (usersData.length > 0) {
+          const randomUser = usersData[Math.floor(Math.random() * usersData.length)];
+          sampleReports.push({
+            id: '1',
+            type: 'user',
+            title: 'Inappropriate behavior during game',
+            description: 'User was using offensive language and being aggressive towards other players during the badminton session.',
+            reporterName: 'Alice Smith',
+            reporterEmail: 'alice.smith@email.com',
+            targetName: randomUser.fullName || 'Unknown User',
+            targetType: 'user',
+            status: 'pending',
+            priority: 'high',
+            submitDate: new Date().toISOString(),
+            isSample: true
+          });
+        }
+        
+        // Create facility maintenance reports
+        if (facilitiesData.length > 0) {
+          const randomFacility = facilitiesData[Math.floor(Math.random() * facilitiesData.length)];
+          sampleReports.push({
+            id: '2',
+            type: 'facility',
+            title: 'Poor facility maintenance',
+            description: 'The facility has several maintenance issues that need attention.',
+            reporterName: 'Mike Johnson',
+            reporterEmail: 'mike.j@email.com',
+            targetName: randomFacility.name,
+            targetType: 'facility',
+            status: 'resolved',
+            priority: 'medium',
+            submitDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            resolvedDate: new Date().toISOString(),
+            resolvedBy: 'Admin Team',
+            isSample: true
+          });
+        }
+        
+        // Create payment issue reports
+        sampleReports.push({
+          id: '3',
+          type: 'payment',
+          title: 'Unauthorized charge',
+          description: 'I was charged for a booking that I cancelled within the cancellation period.',
+          reporterName: 'Sarah Wilson',
+          reporterEmail: 'sarah.w@email.com',
+          targetName: 'Booking #12345',
+          targetType: 'booking',
+          status: 'pending',
+          priority: 'urgent',
+          submitDate: new Date().toISOString(),
+          isSample: true
+        });
+        
+        // Create content moderation reports
+        if (facilitiesData.length > 0) {
+          const randomFacility2 = facilitiesData[Math.floor(Math.random() * facilitiesData.length)];
+          sampleReports.push({
+            id: '4',
+            type: 'content',
+            title: 'Spam in facility description',
+            description: 'Facility owner is posting inappropriate links and promotional content in the facility description.',
+            reporterName: 'Tom Brown',
+            reporterEmail: 'tom.brown@email.com',
+            targetName: randomFacility2.name,
+            targetType: 'facility',
+            status: 'dismissed',
+            priority: 'low',
+            submitDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+            resolvedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            resolvedBy: 'Content Moderator',
+            isSample: true
+          });
+        }
+        
+        setReports(sampleReports);
+        
+      } catch (err) {
+        console.error('Error fetching data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDataAndCreateReports();
+  }, []);
+
+  const filteredReports = reports.filter(report => {
     const matchesSearch = report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          report.reporterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          report.targetName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -131,6 +203,23 @@ export default function AdminReports() {
     // Here you would make an API call to dismiss the report
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Reports & Moderation</h1>
+          <p className="text-gray-600 mt-2">Review and moderate user reports and content issues</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading reports...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -145,7 +234,7 @@ export default function AdminReports() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Reports</p>
-              <p className="text-2xl font-bold text-gray-900">{mockReports.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{reports.length}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
               <Flag className="h-6 w-6 text-blue-600" />
@@ -157,7 +246,7 @@ export default function AdminReports() {
             <div>
               <p className="text-sm font-medium text-gray-600">Pending</p>
               <p className="text-2xl font-bold text-gray-900">
-                {mockReports.filter(r => r.status === 'pending').length}
+                {reports.filter(r => r.status === 'pending').length}
               </p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-full">
@@ -170,7 +259,7 @@ export default function AdminReports() {
             <div>
               <p className="text-sm font-medium text-gray-600">Resolved</p>
               <p className="text-2xl font-bold text-gray-900">
-                {mockReports.filter(r => r.status === 'resolved').length}
+                {reports.filter(r => r.status === 'resolved').length}
               </p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
@@ -183,7 +272,7 @@ export default function AdminReports() {
             <div>
               <p className="text-sm font-medium text-gray-600">Urgent</p>
               <p className="text-2xl font-bold text-gray-900">
-                {mockReports.filter(r => r.priority === 'urgent').length}
+                {reports.filter(r => r.priority === 'urgent').length}
               </p>
             </div>
             <div className="p-3 bg-red-100 rounded-full">

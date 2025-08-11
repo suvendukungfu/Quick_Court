@@ -128,9 +128,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const mappedUser = mapSupabaseUserToUser(data.user, userData);
             setUser(mappedUser);
           } else {
-            // Fallback to metadata
-            const mappedUser = mapSupabaseUserToUser(data.user);
-            setUser(mappedUser);
+            // User exists in auth but not in our users table - create the record
+            console.log('User exists in auth but not in users table, creating record...');
+            try {
+              const { data: newUserData, error: createError } = await users.create({
+                id: data.user.id,
+                email: data.user.email!,
+                full_name: data.user.user_metadata?.fullName || data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User',
+                role: data.user.user_metadata?.role || 'customer',
+                status: 'active'
+              });
+              
+              if (newUserData && !createError) {
+                const mappedUser = mapSupabaseUserToUser(data.user, newUserData[0]);
+                setUser(mappedUser);
+                console.log('Successfully created user record');
+              } else {
+                console.error('Failed to create user record:', createError);
+                // Fallback to metadata
+                const mappedUser = mapSupabaseUserToUser(data.user);
+                setUser(mappedUser);
+              }
+            } catch (createError) {
+              console.error('Error creating user record:', createError);
+              // Fallback to metadata
+              const mappedUser = mapSupabaseUserToUser(data.user);
+              setUser(mappedUser);
+            }
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -152,7 +176,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('Attempting registration for:', userData.email);
       
-      // First, create the user in Supabase Auth
+      // Check if user already exists in our users table
+      try {
+        const { data: existingUser, error: checkError } = await users.getByEmail(userData.email!);
+        if (existingUser && !checkError) {
+          console.error('User already exists in users table:', existingUser);
+          throw new Error('An account with this email already exists. Please try signing in instead.');
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('already exists')) {
+          throw error;
+        }
+        console.log('User does not exist in users table, proceeding with registration');
+      }
+      
+      // First, create the user in Supabase Auth with email confirmation
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email!,
         password: userData.password,
@@ -160,51 +198,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           data: {
             fullName: userData.fullName,
             role: userData.role || 'customer'
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/login`
         }
       });
       
       if (authError) {
         console.error('Auth registration error:', authError.message, authError);
-        return false;
+        if (authError.message.includes('already registered')) {
+          throw new Error('An account with this email already exists. Please try signing in instead.');
+        } else if (authError.message.includes('password')) {
+          throw new Error('Password is too weak. Please use a stronger password.');
+        } else if (authError.message.includes('email')) {
+          throw new Error('Please enter a valid email address.');
+        } else {
+          throw new Error(`Registration failed: ${authError.message}`);
+        }
       }
       
       console.log('Auth registration response:', authData);
       
       if (authData.user) {
+        // Check if email confirmation is required
+        if (!authData.session) {
+          console.log('Email confirmation required');
+          throw new Error('Please check your email and click the confirmation link to complete registration.');
+        }
+        
         // Create user record in our users table
         try {
-          const { data: userRecord, error: userError } = await users.create({
+          const userRecordData = {
             id: authData.user.id,
             email: userData.email!,
             full_name: userData.fullName!,
             role: userData.role || 'customer',
             status: 'active'
-          });
+          };
+          
+          console.log('Creating user record with data:', userRecordData);
+          
+          const { data: userRecord, error: userError } = await users.create(userRecordData);
           
           if (userError) {
             console.error('User record creation error:', userError);
-            // Auth user was created but user record failed - this is a problem
-            return false;
+            if (userError.message.includes('duplicate key')) {
+              throw new Error('An account with this email already exists. Please try signing in instead.');
+            } else if (userError.message.includes('permission')) {
+              throw new Error('Registration failed due to permission error. Please contact support.');
+            } else {
+              throw new Error(`Failed to create user profile: ${userError.message}`);
+            }
           }
           
           console.log('User record created successfully:', userRecord);
           
-          // Set the user in context
-          const mappedUser = mapSupabaseUserToUser(authData.user, userRecord[0]);
-          setUser(mappedUser);
+          // Set the user in context if we have a session
+          if (authData.session && userRecord && userRecord.length > 0) {
+            const mappedUser = mapSupabaseUserToUser(authData.user, userRecord[0]);
+            setUser(mappedUser);
+          }
           
           return true;
         } catch (error) {
           console.error('Error creating user record:', error);
-          return false;
+          if (error instanceof Error) {
+            throw error;
+          }
+          throw new Error('Failed to create user profile. Please try again or contact support.');
         }
       }
       
-      return false;
+      throw new Error('Registration failed. Please try again.');
     } catch (error) {
       console.error('Registration error:', error);
-      return false;
+      throw error;
     }
   };
 
@@ -264,6 +331,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user,
     isLoading: loading,
   };
+  
+  console.log('AuthContext: Current state:', {
+    user: value.user,
+    isAuthenticated: value.isAuthenticated,
+    isLoading: value.isLoading
+  });
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

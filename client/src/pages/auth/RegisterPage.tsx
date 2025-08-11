@@ -26,7 +26,8 @@ export default function RegisterPage() {
       facility_owner: '/owner/dashboard',
       admin: '/admin/dashboard',
     };
-    return <Navigate to={dashboardPaths[user.role]} replace />;
+    const dashboardPath = dashboardPaths[user.role] || '/home';
+    return <Navigate to={dashboardPath} replace />;
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -50,15 +51,23 @@ export default function RegisterPage() {
     setError('');
 
     try {
+      console.log('Starting registration process...');
       const registrationSuccess = await register(formData);
+      
       if (registrationSuccess) {
+        console.log('Registration successful');
         setSuccess(true);
       } else {
-        setError('Registration failed. The email may already be in use or there was a server error.');
+        console.error('Registration returned false');
+        setError('Registration failed. Please try again or contact support.');
       }
     } catch (err) {
       console.error('Registration error:', err);
-      setError('Registration failed. Please try again.');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Registration failed. Please try again or contact support.');
+      }
     } finally {
       setLoading(false);
     }

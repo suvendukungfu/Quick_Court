@@ -12,6 +12,9 @@ import RegisterPage from './pages/auth/RegisterPage';
 import HomePage from './pages/user/HomePage';
 import VenuesPage from './pages/user/VenuesPage';
 import VenueDetailsPage from './pages/user/VenueDetailsPage';
+import CustomerDashboard from './pages/user/CustomerDashboard';
+import SimpleTestDashboard from './pages/user/SimpleTestDashboard';
+import SimpleCustomerDashboard from './pages/user/SimpleCustomerDashboard';
 import AboutUsPage from './pages/AboutUsPage';
 
 // Placeholder components for other pages
@@ -31,12 +34,14 @@ import AdminReports from './pages/admin/AdminReports';
 
 // Owner Pages
 import OwnerDashboard from './pages/owner/OwnerDashboard';
-import PostPropertyPage from './pages/owner/PostPropertyPage';
+import PostFacilityPage from './pages/owner/PostFacilityPage';
+import OwnerFacilitiesPage from './pages/owner/OwnerFacilitiesPage';
+import OwnerTimeSlotsPage from './pages/owner/OwnerTimeSlotsPage';
+import OwnerBookingsPage from './pages/owner/OwnerBookingsPage';
+import OwnerDebugPage from './pages/owner/OwnerDebugPage';
 
-// Owner placeholder components (to be implemented later)
-const OwnerFacilities = () => <div className="p-8"><h1 className="text-2xl font-bold">Facility Management</h1><p>Manage your facilities here...</p></div>;
-const OwnerTimeSlots = () => <div className="p-8"><h1 className="text-2xl font-bold">Time Slot Management</h1><p>Manage time slots here...</p></div>;
-const OwnerBookings = () => <div className="p-8"><h1 className="text-2xl font-bold">Booking Overview</h1><p>View facility bookings here...</p></div>;
+// User Pages
+import BookFacilityPage from './pages/user/BookFacilityPage';
 
 function App() {
   return (
@@ -50,8 +55,13 @@ function App() {
 
             {/* User Routes */}
             <Route path="/home" element={
-              <ProtectedRoute requiredRole="user">
-                <HomePage />
+              <ProtectedRoute requiredRole="customer">
+                <CustomerDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard" element={
+              <ProtectedRoute requiredRole="customer">
+                <CustomerDashboard />
               </ProtectedRoute>
             } />
             <Route path="/venues" element={
@@ -70,7 +80,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/bookings" element={
-              <ProtectedRoute requiredRole="user">
+              <ProtectedRoute requiredRole="customer">
                 <MyBookingsPage />
               </ProtectedRoute>
             } />
@@ -89,22 +99,52 @@ function App() {
             } />
             <Route path="/owner/post-property" element={
               <ProtectedRoute requiredRole="facility_owner">
-                <PostPropertyPage />
+                <PostFacilityPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/owner/post-facility" element={
+              <ProtectedRoute requiredRole="facility_owner">
+                <PostFacilityPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/owner/edit-facility/:id" element={
+              <ProtectedRoute requiredRole="facility_owner">
+                <PostFacilityPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/facility/:id" element={
+              <ProtectedRoute requiredRole="customer">
+                <VenueDetailsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/book-facility/:facilityId" element={
+              <ProtectedRoute requiredRole="customer">
+                <BookFacilityPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-bookings" element={
+              <ProtectedRoute requiredRole="customer">
+                <MyBookingsPage />
               </ProtectedRoute>
             } />
             <Route path="/owner/facilities" element={
               <ProtectedRoute requiredRole="facility_owner">
-                <OwnerFacilities />
+                <OwnerFacilitiesPage />
               </ProtectedRoute>
             } />
             <Route path="/owner/timeslots" element={
               <ProtectedRoute requiredRole="facility_owner">
-                <OwnerTimeSlots />
+                <OwnerTimeSlotsPage />
               </ProtectedRoute>
             } />
             <Route path="/owner/bookings" element={
               <ProtectedRoute requiredRole="facility_owner">
-                <OwnerBookings />
+                <OwnerBookingsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/owner/debug" element={
+              <ProtectedRoute requiredRole="facility_owner">
+                <OwnerDebugPage />
               </ProtectedRoute>
             } />
             <Route path="/owner/profile" element={

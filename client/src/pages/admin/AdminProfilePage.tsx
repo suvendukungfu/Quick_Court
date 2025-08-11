@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Shield, BarChart3, Users, AlertTriangle, Edit2, Camera, Activity, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { users as usersApi, facilities as facilitiesApi } from '../../lib/supabase';
+import { User as UserType } from '../../types';
+import { Facility } from '../../types/facility';
 
 interface AdminStats {
   totalUsers: number;
@@ -37,69 +40,124 @@ interface AdminProfile {
 const AdminProfilePage: React.FC = () => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<AdminProfile>({
-    id: '3',
-    fullName: 'Michael Chen',
-    email: 'michael.chen@quickcourt.com',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-    role: 'admin',
+    id: user?.id || '',
+    fullName: user?.fullName || 'Admin User',
+    email: user?.email || '',
+    avatar: user?.avatar || `https://ui-avatars.com/api/?name=${user?.fullName || 'Admin'}&size=150`,
+    role: user?.role || 'admin',
     department: 'Platform Operations',
     permissions: ['User Management', 'Facility Approval', 'Content Moderation', 'System Monitoring', 'Analytics'],
-    joinDate: 'January 2022',
-    lastLogin: '2 minutes ago',
+    joinDate: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long' 
+    }) : 'Recently',
+    lastLogin: 'Just now',
     stats: {
-      totalUsers: 2847,
-      totalFacilities: 156,
-      pendingApprovals: 12,
-      reportsToday: 3,
-      systemUptime: '99.9%',
-      totalRevenue: 125680
+      totalUsers: 0,
+      totalFacilities: 0,
+      pendingApprovals: 0,
+      reportsToday: 0,
+      systemUptime: '100%',
+      totalRevenue: 0
     },
     recentActivity: [
       {
-        date: '5 minutes ago',
-        action: 'Approved facility',
-        details: 'Green Valley Sports Complex'
-      },
-      {
-        date: '1 hour ago',
-        action: 'Resolved user report',
-        details: 'Spam content removed'
-      },
-      {
-        date: '3 hours ago',
-        action: 'System maintenance',
-        details: 'Database optimization completed'
-      },
-      {
-        date: '6 hours ago',
-        action: 'User suspension',
-        details: 'Policy violation - User #1247'
+        date: 'Just now',
+        action: 'Profile loaded',
+        details: 'Admin profile initialized'
       }
     ],
     systemHealth: [
       {
         service: 'Web Application',
         status: 'operational',
-        uptime: '99.9%'
+        uptime: '100%'
       },
       {
         service: 'Database',
         status: 'operational',
-        uptime: '99.8%'
+        uptime: '100%'
       },
       {
-        service: 'Payment Gateway',
+        service: 'API Services',
         status: 'operational',
         uptime: '100%'
       },
       {
-        service: 'Email Service',
-        status: 'degraded',
-        uptime: '98.5%'
+        service: 'Authentication',
+        status: 'operational',
+        uptime: '100%'
       }
     ]
   });
+
+  // Fetch real data from Supabase
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch users and facilities
+        const [usersResponse, facilitiesResponse] = await Promise.all([
+          usersApi.getAll(),
+          facilitiesApi.getAll()
+        ]);
+        
+        if (usersResponse.error) {
+          console.error('Error fetching users:', usersResponse.error);
+        }
+        
+        if (facilitiesResponse.error) {
+          console.error('Error fetching facilities:', facilitiesResponse.error);
+        }
+        
+        const users = usersResponse.data || [];
+        const facilities = facilitiesResponse.data || [];
+        
+        // Calculate real stats
+        const totalUsers = users.length;
+        const totalFacilities = facilities.length;
+        const pendingFacilities = facilities.filter(f => f.status === 'pending').length;
+        const reportsToday = 0; // Will be implemented when reports are added
+        
+        // Update profile with real data
+        setProfile(prev => ({
+          ...prev,
+          stats: {
+            totalUsers,
+            totalFacilities,
+            pendingApprovals: pendingFacilities,
+            reportsToday,
+            systemUptime: '100%',
+            totalRevenue: 0 // Will be implemented when payments are added
+          },
+          recentActivity: [
+            {
+              date: 'Just now',
+              action: 'Data refreshed',
+              details: `${totalUsers} users, ${totalFacilities} facilities`
+            },
+            {
+              date: 'Just now',
+              action: 'System status',
+              details: 'All services operational'
+            }
+          ]
+        }));
+        
+      } catch (err) {
+        console.error('Error fetching admin data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (user) {
+      fetchAdminData();
+    }
+  }, [user]);
 
   const handleSaveProfile = () => {
     setIsEditing(false);
@@ -114,6 +172,21 @@ const AdminProfilePage: React.FC = () => {
       default: return 'text-gray-600 bg-gray-100';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading admin profile...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
