@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
+import { supabase, auth } from '../lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
@@ -8,84 +10,102 @@ interface AuthContextType {
   register: (userData: Partial<User> & { password: string }) => Promise<boolean>;
   updateProfile: (userData: Partial<User>) => Promise<boolean>;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users data
-const mockUsers: (User & { password: string })[] = [
-  {
-    id: '1',
-    email: 'user@example.com',
-    password: 'password123',
-    fullName: 'John Smith',
-    role: 'user',
+// Helper function to map Supabase user to our User type
+const mapSupabaseUserToUser = (supabaseUser: SupabaseUser): User => {
+  const metadata = supabaseUser.user_metadata || {};
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email || '',
+    fullName: metadata.fullName || metadata.full_name || supabaseUser.email?.split('@')[0] || 'User',
+    role: metadata.role || 'user',
     status: 'active',
-    createdAt: new Date('2024-01-01'),
-  },
-  {
-    id: '2',
-    email: 'owner@example.com',
-    password: 'password123',
-    fullName: 'Sarah Johnson',
-    role: 'facility_owner',
-    status: 'active',
-    createdAt: new Date('2024-01-02'),
-  },
-  {
-    id: '3',
-    email: 'admin@example.com',
-    password: 'password123',
-    fullName: 'Mike Admin',
-    role: 'admin',
-    status: 'active',
-    createdAt: new Date('2024-01-03'),
-  },
-];
+    createdAt: new Date(supabaseUser.created_at || Date.now()),
+  };
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored user session
-    const storedUser = localStorage.getItem('quickcourt_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    // Get initial session
+    const getInitialSession = async () => {
+      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+      if (supabaseUser) {
+        const userData = mapSupabaseUserToUser(supabaseUser);
+        setUser(userData);
+      }
+      setLoading(false);
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          const userData = mapSupabaseUserToUser(session.user);
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const foundUser = mockUsers.find(u => u.email === email && u.password === password);
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('quickcourt_user', JSON.stringify(userWithoutPassword));
-      return true;
+    try {
+      const { data, error } = await auth.signIn(email, password);
+      
+      if (error) {
+        console.error('Login error:', error);
+        return false;
+      }
+      
+      if (data.user) {
+        const userData = mapSupabaseUserToUser(data.user);
+        setUser(userData);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    return false;
   };
 
   const register = async (userData: Partial<User> & { password: string }): Promise<boolean> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const newUser: User = {
-      id: String(mockUsers.length + 1),
-      email: userData.email!,
-      fullName: userData.fullName!,
-      role: userData.role || 'user',
-      status: 'active',
-      createdAt: new Date(),
-    };
-    
-    setUser(newUser);
-    localStorage.setItem('quickcourt_user', JSON.stringify(newUser));
-    return true;
+    try {
+      const { data, error } = await auth.signUp(userData.email!, userData.password, {
+        fullName: userData.fullName,
+        role: userData.role || 'user'
+      });
+      
+      if (error) {
+        console.error('Registration error:', error);
+        return false;
+      }
+      
+      if (data.user) {
+        const mappedUser = mapSupabaseUserToUser(data.user);
+        setUser(mappedUser);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Registration error:', error);
+      return false;
+    }
   };
 
   const updateProfile = async (userData: Partial<User>): Promise<boolean> => {
@@ -101,9 +121,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('quickcourt_user');
+  const logout = async () => {
+    try {
+      await auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   if (loading) {
@@ -121,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     register,
     updateProfile,
     isAuthenticated: !!user,
+    isLoading: loading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
