@@ -1,7 +1,8 @@
 -- Database Schema Update for QuickCourt
 -- Run this in your Supabase SQL editor
 
--- 1. Drop existing tables if they exist (for clean setup)
+-- 1. Drop existing tables and views if they exist (for clean setup)
+DROP VIEW IF EXISTS facility_availability CASCADE;
 DROP TABLE IF EXISTS facility_availability CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
