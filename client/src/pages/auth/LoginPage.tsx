@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loginMode, setLoginMode] = useState<'admin' | 'member'>('member');
 
   const { login, isAuthenticated, user } = useAuth();
   const location = useLocation();
@@ -16,6 +17,7 @@ export default function LoginPage() {
   if (isAuthenticated && user) {
     const dashboardPaths = {
       user: '/home',
+      customer: '/home',
       facility_owner: '/owner/dashboard',
       admin: '/admin/dashboard',
     };
@@ -57,11 +59,47 @@ export default function LoginPage() {
             </div>
           </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">Welcome to QuickCourt</h2>
-          <p className="mt-2 text-gray-600">Sign in to your account</p>
+          <p className="mt-2 text-gray-600">
+            {loginMode === 'admin' ? 'Admin access' : 'Sign in to your account'}
+          </p>
         </div>
 
+        {/* Mode Switch */}
+        <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setLoginMode('admin')}
+            className={`w-1/2 py-3 text-sm font-medium rounded-lg transition-colors ${
+              loginMode === 'admin'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Login as Admin
+          </button>
+          <button
+            type="button"
+            onClick={() => setLoginMode('member')}
+            className={`w-1/2 py-3 text-sm font-medium rounded-lg transition-colors ${
+              loginMode === 'member'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Owners & Customers
+          </button>
+        </div>
 
-
+        {/* Context note */}
+        {loginMode === 'admin' ? (
+          <div className="text-xs text-center text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
+            For authorized administrators only. Use your admin credentials.
+          </div>
+        ) : (
+          <div className="text-xs text-center text-gray-600">
+            Sign in as a facility owner or customer.
+          </div>
+        )}
         {/* Login Form */}
         <form className="mt-8 space-y-6 bg-white p-8 rounded-2xl shadow-lg border border-gray-100" onSubmit={handleSubmit}>
           {error && (
@@ -73,7 +111,7 @@ export default function LoginPage() {
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email address
+                {loginMode === 'admin' ? 'Admin email' : 'Email address'}
               </label>
               <input
                 id="email"
@@ -84,7 +122,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Enter your email"
+                placeholder={loginMode === 'admin' ? 'Enter admin email' : 'Enter your email'}
               />
             </div>
 
@@ -102,7 +140,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-12"
-                  placeholder="Enter your password"
+                  placeholder={loginMode === 'admin' ? 'Enter admin password' : 'Enter your password'}
                 />
                 <button
                   type="button"
@@ -123,18 +161,20 @@ export default function LoginPage() {
             {loading ? (
               <Loader className="h-5 w-5 animate-spin" />
             ) : (
-              'Sign in'
+              loginMode === 'admin' ? 'Sign in as Admin' : 'Sign in'
             )}
           </button>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-                Sign up
-              </Link>
-            </p>
-          </div>
+          {loginMode === 'member' && (
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
+                  Sign up
+                </Link>
+              </p>
+            </div>
+          )}
         </form>
       </div>
     </div>

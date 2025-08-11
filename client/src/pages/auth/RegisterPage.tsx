@@ -9,7 +9,7 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'user' as 'user' | 'facility_owner',
+    role: 'customer' as 'customer' | 'facility_owner' | 'admin',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -22,6 +22,7 @@ export default function RegisterPage() {
   if (isAuthenticated && user) {
     const dashboardPaths = {
       user: '/home',
+      customer: '/home',
       facility_owner: '/owner/dashboard',
       admin: '/admin/dashboard',
     };
@@ -164,8 +165,9 @@ export default function RegisterPage() {
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
               >
-                <option value="user">Sports Player (Book facilities)</option>
-                <option value="facility_owner">Facility Owner (Manage venues)</option>
+                <option value="customer">Customer</option>
+                <option value="facility_owner">Facility Owner</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
 

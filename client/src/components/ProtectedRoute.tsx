@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredRole?: 'user' | 'facility_owner' | 'admin';
+  requiredRole?: 'user' | 'facility_owner' | 'admin' | 'customer';
 }
 
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
@@ -18,6 +18,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
     // Redirect to appropriate dashboard based on user role
     const dashboardPaths = {
       user: '/home',
+      customer: '/home',
       facility_owner: '/owner/dashboard',
       admin: '/admin/dashboard',
     };

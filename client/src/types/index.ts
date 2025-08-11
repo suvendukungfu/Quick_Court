@@ -3,7 +3,7 @@ export interface User {
   email: string;
   fullName: string;
   avatar?: string;
-  role: 'user' | 'facility_owner' | 'admin';
+  role: 'user' | 'facility_owner' | 'admin' | 'customer';
   status: 'active' | 'banned';
   createdAt: Date;
 }
