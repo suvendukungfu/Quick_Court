@@ -7,6 +7,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 // Auth Pages
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import OTPLoginPage from './pages/auth/OTPLoginPage';
+import PhoneRegisterPage from './pages/auth/PhoneRegisterPage';
 
 // User Pages
 import HomePage from './pages/user/HomePage';
@@ -52,6 +54,8 @@ function App() {
             {/* Public Routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/login/otp" element={<OTPLoginPage />} />
+            <Route path="/register/phone" element={<PhoneRegisterPage />} />
 
             {/* User Routes */}
             <Route path="/home" element={

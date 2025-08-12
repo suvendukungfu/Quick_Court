@@ -16,6 +16,16 @@ export const users = {
     return { data, error }
   },
 
+  // Get user by phone number
+  getByPhone: async (phone: string) => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('phone', phone)
+      .single()
+    return { data, error }
+  },
+
   // Get user by ID
   getById: async (id: string) => {
     const { data, error } = await supabase

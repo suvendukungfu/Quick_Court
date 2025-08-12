@@ -250,8 +250,12 @@ export default function RegisterPage() {
           <div className="text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link to="/login" className="font-medium text-purple-600 hover:text-purple-500">
+              <Link to="/login" className="font-medium text-purple-600 hover:text-purple-500 mr-2">
                 Sign in
+              </Link>
+              or{' '}
+              <Link to="/register/phone" className="font-medium text-purple-600 hover:text-purple-500">
+                Register with phone
               </Link>
             </p>
           </div>

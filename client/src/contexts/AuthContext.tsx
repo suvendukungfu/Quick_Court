@@ -1,13 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 import { supabase, users } from '../lib/supabase';
+import { OTPService } from '../lib/otpService';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
+  loginWithOTP: (phoneNumber: string, otpCode: string) => Promise<boolean>;
+  sendLoginOTP: (phoneNumber: string) => Promise<boolean>;
   logout: () => void;
-  register: (userData: Partial<User> & { password: string }) => Promise<boolean>;
+  register: (userData: Partial<User> & { password: string; phone?: string; phoneVerified?: boolean; preferredAuthMethod?: string }) => Promise<boolean>;
   updateProfile: (userData: Partial<User>) => Promise<boolean>;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -172,6 +175,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithOTP = async (phoneNumber: string, otpCode: string): Promise<boolean> => {
+    try {
+      console.log('Attempting OTP login for:', phoneNumber);
+      
+      // Verify OTP
+      const otpResponse = await OTPService.verifyOTP(phoneNumber, otpCode, 'login');
+      
+      if (!otpResponse.success) {
+        console.error('OTP verification failed:', otpResponse.message);
+        return false;
+      }
+
+      // Get user by phone number
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('phone', phoneNumber)
+        .single();
+
+      if (userError || !userData) {
+        console.error('User not found for phone:', phoneNumber);
+        return false;
+      }
+
+      // Create a session using Supabase auth with the user's email
+      // This is a workaround since Supabase doesn't directly support phone-only auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: userData.email,
+        password: 'otp-login-' + Date.now() // Temporary password for OTP login
+      });
+
+      // If password login fails, create a temporary session
+      if (authError) {
+        // For OTP login, we'll set the user directly without Supabase auth session
+        const mappedUser = {
+          id: userData.id,
+          email: userData.email,
+          fullName: userData.full_name,
+          role: userData.role,
+          status: userData.status,
+          phone: userData.phone,
+          avatar: userData.avatar_url,
+          createdAt: new Date(userData.created_at),
+        };
+        setUser(mappedUser);
+        return true;
+      }
+
+      if (authData.user) {
+        const mappedUser = mapSupabaseUserToUser(authData.user, userData);
+        setUser(mappedUser);
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('OTP login error:', error);
+      return false;
+    }
+  };
+
+  const sendLoginOTP = async (phoneNumber: string): Promise<boolean> => {
+    try {
+      const response = await OTPService.sendOTP(phoneNumber, 'login');
+      return response.success;
+    } catch (error) {
+      console.error('Send login OTP error:', error);
+      return false;
+    }
+  };
+
   const register = async (userData: Partial<User> & { password: string }): Promise<boolean> => {
     try {
       console.log('Attempting registration for:', userData.email);
@@ -232,7 +306,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: userData.email!,
             full_name: userData.fullName!,
             role: userData.role || 'customer',
-            status: 'active'
+            status: 'active',
+            phone: userData.phone || null,
+            phone_verified: userData.phoneVerified || false,
+            preferred_auth_method: userData.preferredAuthMethod || 'password'
           };
           
           console.log('Creating user record with data:', userRecordData);
@@ -325,6 +402,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     login,
+    loginWithOTP,
+    sendLoginOTP,
     logout,
     register,
     updateProfile,

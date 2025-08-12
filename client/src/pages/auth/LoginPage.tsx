@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Trophy, Eye, EyeOff, Loader } from 'lucide-react';
+import { Trophy, Eye, EyeOff, Loader, Smartphone } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -165,12 +165,27 @@ export default function LoginPage() {
             )}
           </button>
 
+          {/* OTP Login Option */}
+          <div className="text-center">
+            <Link
+              to="/login/otp"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center justify-center"
+            >
+              <Smartphone className="h-4 w-4 mr-2" />
+              Sign in with phone number (OTP)
+            </Link>
+          </div>
+
           {loginMode === 'member' && (
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
-                <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
+                <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 mr-2">
                   Sign up
+                </Link>
+                or{' '}
+                <Link to="/register/phone" className="font-medium text-blue-600 hover:text-blue-500">
+                  Register with phone
                 </Link>
               </p>
             </div>
